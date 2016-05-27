@@ -1,1 +1,6 @@
-body { border: 1px solid red;}
+/* Global Styles */
+body {
+    border: 1px solid red;
+    border-radius: 5px;
+    font-family: Avenir;
+}

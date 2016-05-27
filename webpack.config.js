@@ -1,3 +1,5 @@
+require('babel-register')
+
 const webpack = require('webpack');
 const fs      = require('fs');
 const path    = require('path'),
@@ -15,6 +17,7 @@ const dotenv = require('dotenv');
 
 const NODE_ENV = process.env.NODE_ENV;
 const isDev   = NODE_ENV === 'development';
+const isTest = NODE_ENV === 'test';
 
 
 var config = getConfig({
@@ -23,6 +26,15 @@ var config = getConfig({
     out: dest,
     clearBeforeBuild: true
 })
+
+// Make aliases for path imports
+config.resolve.root = [src, modules]
+config.resolve.alias = {
+  'css': join(src, 'styles'),
+  'containers': join(src, 'containers'),
+  'components': join(src, 'components'),
+  'utils': join(src, 'utils')
+}
 
 config.postcss = [].concat([
     require('precss')({}),
@@ -78,5 +90,22 @@ const defines = Object.keys(envVariables)
 config.plugins = [
     new webpack.DefinePlugin(defines)
 ].concat(config.plugins);
+
+if (isTest) {
+  config.externals = {
+    'react/lib/ReactContext': true,
+    'react/lib/ExecutionEnvironment': true
+  }
+  config.plugins = config.plugins.filter(p => {
+    const name = p.constructor.toString();
+    const fnName = name.match(/^function (.*)\((.*\))/)
+
+    const idx = [
+      'DedupePlugin',
+      'UglifyJsPlugin'
+    ].indexOf(fnName[1]);
+    return idx < 0;
+  });
+}
 
 module.exports = config;
